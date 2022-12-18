@@ -7,7 +7,7 @@ import tkinter as tk
 import tkinter.filedialog
 import cv2
 from PIL import Image, ImageTk
-import numpy
+import numpy as np
 
 import pyocr
 import pyocr.builders
@@ -24,9 +24,6 @@ os.environ["TESSDATA_PREFIX"] = TESSDATA_PATH
 tools = pyocr.get_available_tools()
 tool = tools[0]
 
-#テスト用変数
-img1 = None
-
 def create_img(cv2_img):
     cv2_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
     set_img = cv2.resize(cv2_img, (int(340), int(660)))
@@ -38,8 +35,8 @@ def getfile():
     global set_img
     global tk_img
     global img
-    global rgb_cv2_image
-    f_paht = tk.filedialog.askopenfilename(title="ファイル選択", initialdir="C:\python\apitest" ,filetypes=[("Image file", ".png .jpg .jpeg")])
+    global pil_image
+    f_paht = tk.filedialog.askopenfilename(title="ファイル選択", initialdir="C:\python\tkinter_ocr" ,filetypes=[("Image file", ".png .jpg .jpeg")])
     str_file_paht = str(f_paht)
     #OpenCVで画像を読み込む。各処理を行う。
     cv2_img = cv2.imread(str_file_paht)
@@ -52,34 +49,34 @@ def getfile():
     #オリジナル画像
     canvas_org.create_image(0, 0, image=img, anchor=tk.NW)
 
+#OCRpy、wordBoxの作成
 def create_word_box():
-    img = format(tk_img)
-    canvas_img.create_image(0, 0, image=img, anchor=tk.NW)
-
-"""#OCRpy、wordBoxの作成
-def create_word_box():
+    global word_box
     global word_box_img
-    out = set_img
+    global tk_word_box_img
+    pil_out = pil_image
     builder = pyocr.builders.WordBoxBuilder(tesseract_layout=6)
-    results = tool.image_to_string(out, lang="jpn", builder=builder)
+    results = tool.image_to_string(pil_out, lang="jpn", builder=builder)
+    cv2_out = np.array(pil_out, dtype="uint8")
     for d in results:
         pt1 = (d.position[0])
         pt2 = (d.position[1])
-        cv2.rectangle(out, pt1, pt2, (0, 0, 255), 2)
-    rgb_cv2_image = cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
-    pil_image = Image.fromarray(rgb_cv2_image)
-    word_box_img = ImageTk.PhotoImage(pil_image)
-    return word_box_img"""
+        cv2_word_box = cv2.rectangle(cv2_out, tuple(pt1), tuple(pt2), (0, 0, 255), 2)
+    pil_word_box_img = Image.fromarray(cv2_word_box)
+    tk_word_box_img = ImageTk.PhotoImage(pil_word_box_img)
+    word_box_img = format(tk_word_box_img)
+    canvas_img.create_image(0, 0, image=word_box_img, anchor=tk.NW)
 
 #OCRpy、テキストの作成
 def crate_text():
     global text
     texts = []
     builder = pyocr.builders.TextBuilder(tesseract_layout=6)
-    respons = tool.image_to_string(rgb_cv2_image, lang="jpn", builder=builder)
+    respons = tool.image_to_string(pil_image, lang="jpn", builder=builder)
     res = re.subn('([あ-んア-ン一-龥ー])\s+((?=[あ-んア-ン一-龥ー]))',r'\1\2', respons)
-    text = texts.append(res)
-    canvas_text.create_text(0, 0, text=text, anchor=tk.NW)
+    texts.append(res)
+    for text in texts:
+        canvas_text.create_text(0, 0, text=text, anchor=tk.NW)
 
 def run_ocr():
     create_word_box()
@@ -104,12 +101,6 @@ frame_img.place(x=380, y=30, width=360, height=680)
 
 frame_text = tk.Frame(frame, relief=tk.FLAT, bg="#E6E6E6", bd=2)
 frame_text.place(x=750, y=30, width=360, height=680)
-
-'''#テキストボックスの作成
-en = tk.Entry(frame_text)
-en.insert('0', str('\n'.join(en)))
-en.place(x=10, y=10, width=340, height=660)'''
-
 
 #Labelの生成
 l_org = tk.Label(frame,text="オリジナル", relief="flat")
