@@ -70,13 +70,14 @@ def create_word_box():
 #OCRpy、テキストの作成
 def crate_text():
     global text
+    canvas_text.delete("ocr_text")
     texts = []
     builder = pyocr.builders.TextBuilder(tesseract_layout=6)
     respons = tool.image_to_string(pil_image, lang="jpn", builder=builder)
     res = re.subn('([あ-んア-ン一-龥ー])\s+((?=[あ-んア-ン一-龥ー]))',r'\1\2', respons)
     texts.append(res)
     for text in texts:
-        canvas_text.create_text(0, 0, text=text, anchor=tk.NW)
+        canvas_text.create_text(0, 0, text=text, anchor=tk.NW, tag="ocr_text")
 
 def run_ocr():
     create_word_box()
